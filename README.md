@@ -39,3 +39,25 @@ Items which are desirable for this project.
   documentation should be useful and clear.
 - **Be written in idiomatic Rust.** Patterns, naming and other conventions of
   Rust projects should be respected.
+
+## Tasks
+
+Listed roughly in order of desired completion.
+
+- [ ] Implement subcommands
+  - [ ] list
+    - [x] show all books
+    - [ ] align vertically
+  - [ ] add
+    - [ ] add by ISBN using Google books
+    - [ ] add by Library of Congress number?
+  - [ ] add-parts
+  - [ ] tag
+  - [ ] history
+  - [ ] lend
+  - [ ] remove
+- [ ] Documentation
+  - [ ] add the `#![deny(missing_docs)]` directive
+  - [ ] create useful documentation
+  - [ ] including examples and tests
+- [ ] publish to Crates.io
