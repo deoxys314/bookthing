@@ -1,0 +1,23 @@
+[package]
+name = "booktool"
+version = "0.0.1"
+authors = ["Cameron Rossington <cameron.rossington@gmail.com>"]
+edition = "2018"
+
+
+[lib]
+name = "booklib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "booktool"
+path = "src/main.rs"
+
+[dependencies]
+ansi_term = "0.11.0"
+clap = "2.32.0"
+xdg = "^2.1"
+
+[dependencies.rusqlite]
+version = "0.17.0"
+features = ["bundled"]
