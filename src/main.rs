@@ -1,14 +1,9 @@
 #[macro_use]
 extern crate clap;
 
-extern crate ansi_term;
-
-use ansi_term::Style;
-
 use clap::{Arg, App, SubCommand, ArgGroup};
 
-use booklib::book;
-use booklib::database;
+mod subcommands;
 
 fn main() -> Result<(), usize> {
     let matches = App::new("bookthing")
@@ -80,20 +75,16 @@ fn main() -> Result<(), usize> {
                          .long("title")
                          .takes_value(false)
                          .help("Sort results by title. (Note: this is the default.)"))
-                    .arg(Arg::with_name("isbn")
-                         .long("isbn")
-                         .takes_value(false)
-                         .help("Sort results by isbn."))
                     .arg(Arg::with_name("copies")
                          .long("copies")
                          .takes_value(false)
                          .help("Sort results by the number of copies in your library, then by title."))
-                    .arg(Arg::with_name("lending")
-                         .long("lending")
+                    .arg(Arg::with_name("author")
+                         .long("author")
                          .takes_value(false)
-                         .help("Sort results by lending status, then by title."))
+                         .help("Sort results by author name."))
                     .group(ArgGroup::with_name("sorting")
-                           .args(&["id", "title", "isbn", "copies", "lending"])))
+                           .args(&["author", "id", "title", "copies"])))
         .subcommand(SubCommand::with_name("lend")
                     .about("Track lending status of a book in your library.")
                     .arg(Arg::with_name("in")
@@ -131,31 +122,13 @@ fn main() -> Result<(), usize> {
     // once we have gotten here, clap has already validated arguments
 
     match matches.subcommand() {
-        ("list", Some(m)) => subcommand_list(m),
+        ("list", Some(m)) => match subcommands::list(m) {
+            Ok(()) => Ok(()),
+            Err(_) => Err(1)
+        },
         _ => {
             println!("You have entered a valid subcommand, but which hasn't been implemented yet.");
             Ok(())
         }
     }
 }
-
-
-fn subcommand_list(matches: &clap::ArgMatches) -> Result<(), usize> {
-    let books = database::BookConnection::new().list();
-
-    if matches.is_present("header") {
-        // print the headers here
-        println!("{}", Style::new().bold().paint("ID\tTITLE\tAUTHOR\tISBN"));
-    }
-    for book in books {
-        // print each book here
-        println!("{}\t{}\t{}\t{}",
-                 book.id,
-                 Style::new().underline().paint(book.title),
-                 book.author.unwrap_or("[Author Unknown]".to_string()),
-                 book.bookid.unwrap_or("[no bookid]".to_string()));
-    }
-    // println!("{:?}", matches);
-    Ok(())
-}
-

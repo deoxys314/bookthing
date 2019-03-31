@@ -3,7 +3,6 @@ extern crate xdg;
 
 use crate::book::{Book, BookID, BookIdentifier};
 use rusqlite::{Connection, Result, NO_PARAMS};
-use std::fmt;
 use std::path::PathBuf;
 use xdg::BaseDirectories;
 
@@ -12,23 +11,25 @@ pub struct BookConnection {
     connection: Connection,
 }
 
-impl Default for BookConnection {
-    fn default() -> BookConnection {
-        BookConnection::new()
-    }
+pub enum BookOrder {
+    Author,
+    Copies,
+    Id,
+    ISBN,
+    Title,
 }
 
 // instantiating the struct
 impl BookConnection {
-    pub fn new() -> BookConnection {
+    pub fn new() -> Result<BookConnection> {
         BookConnection::establish_connection(None)
     }
 
-    pub fn from_path(path: PathBuf) -> BookConnection {
+    pub fn from_path(path: PathBuf) -> Result<BookConnection> {
         BookConnection::establish_connection(Some(path))
     }
 
-    fn establish_connection(path: Option<PathBuf>) -> BookConnection {
+    fn establish_connection(path: Option<PathBuf>) -> Result<BookConnection> {
         let xdg_dirs = xdg::BaseDirectories::with_prefix("bookthing").unwrap();
 
         let database_path = match path {
@@ -55,7 +56,7 @@ impl BookConnection {
         "copies"        INTEGER NOT NULL DEFAULT 1
         )"#,
             NO_PARAMS,
-        );
+        )?;
         conn.execute(
             r#"CREATE TABLE IF NOT EXISTS "lending" (
         "id"    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +65,7 @@ impl BookConnection {
         "action"        TEXT
         )"#,
             NO_PARAMS,
-        );
+        )?;
         conn.execute(
             r#"CREATE TABLE IF NOT EXISTS "tags" (
         "id"    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -72,9 +73,9 @@ impl BookConnection {
         "tag"   TEXT NOT NULL
         )"#,
             NO_PARAMS,
-        );
+        )?;
 
-        BookConnection { connection: conn }
+        Ok(BookConnection { connection: conn })
     }
 }
 
@@ -92,11 +93,19 @@ impl BookConnection {
     //     }
     // }
 
-    pub fn list(&self) -> Vec<Book> {
-        let mut statement = self.connection.prepare(
+    pub fn list(&self, sorting: BookOrder) -> Vec<Book> {
+        let sort = match sorting {
+            BookOrder::Author => "author ASC, title ASC",
+            BookOrder::Title => "title ASC",
+            BookOrder::Id => "id ASC",
+            BookOrder::ISBN => "bookid ASC",
+            BookOrder::Copies => "copies DESC, title ASC",
+        };
+
+        let mut statement = self.connection.prepare(&format!("{}{}",
             r#"SELECT id, title, author, bookid, idtype, secondary_authors, publication_year, publisher, copies
                FROM books
-               ORDER BY title DESC"#)
+               ORDER BY "#, sort))
             .expect("Failure in reading database.");
 
         let rows = statement.query_map(NO_PARAMS, |row| {
@@ -105,6 +114,10 @@ impl BookConnection {
                 title: row.get(1).unwrap(),
                 author: row.get(2).unwrap(),
                 bookid: row.get(3).unwrap(),
+                secondary_authors: Some(Vec::new()), // TODO: fix
+                publication_year: row.get(6).unwrap(),
+                publisher: row.get(7).unwrap(),
+                copies: row.get(8).unwrap(),
 
                 ..Book::new()
             })

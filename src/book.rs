@@ -7,20 +7,22 @@ pub enum BookIdentifier {
 }
 
 impl Default for BookIdentifier {
-    fn default() -> Self { BookIdentifier::None }
+    fn default() -> Self {
+        BookIdentifier::None
+    }
 }
 
 #[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Book {
+    pub id: u32,
     pub title: String,
     pub author: Option<String>,
-    pub id: u32,
     pub bookid: Option<String>,
     pub secondary_authors: Option<Vec<String>>,
     pub publication_year: Option<u16>,
     pub publisher: Option<String>,
     pub cover: Option<Vec<u8>>,
-    pub copies: Option<usize>,
+    pub copies: Option<u32>,
 }
 
 impl Book {
@@ -28,14 +30,14 @@ impl Book {
         Book::default()
     }
 
-    pub fn author(mut self, author: String) -> Book {
-        self.author = Some(author);
+    pub fn author(mut self, author: &str) -> Book {
+        self.author = Some(author.to_string());
         self
     }
 
-    pub fn isbn(mut self, isbn: String) -> Book {
+    pub fn isbn(mut self, isbn: &str) -> Book {
         // TODO: validate isbns here
-        self.author = Some(isbn);
+        self.bookid = Some(isbn.to_string());
         self
     }
 
@@ -46,6 +48,6 @@ impl Book {
     // from_isbn()
     // from_LoC()
     //
-    // from_parts(author: Option<String> . . .
+    // from_parts(author: Option<&'static str> . . .
     //   this one is not going to be used, probably, but it's good to have
 }

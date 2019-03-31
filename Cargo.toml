@@ -1,6 +1,6 @@
 [package]
 name = "booktool"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Cameron Rossington <cameron.rossington@gmail.com>"]
 edition = "2018"
 
@@ -17,6 +17,10 @@ path = "src/main.rs"
 ansi_term = "0.11.0"
 clap = "2.32.0"
 xdg = "^2.1"
+
+[dependencies.tabwriter]
+version = "1.1.0"
+features = ["ansi_formatting"]
 
 [dependencies.rusqlite]
 version = "0.17.0"

@@ -5,6 +5,15 @@
 **BookTool is a simple command-line tool for managing a personal library of
 books, and a Rust library for others to build off to do the same.**
 
+## Commands
+
+BookTool provides the following commands:
+
+- `list`
+
+More complete documentation can be found by running `$ booktool [subcommand]
+--help`.
+
 ## Goals and Ungoals
 
 While I do hope this project will be helpful to people, it cannot be all things
@@ -45,9 +54,9 @@ Items which are desirable for this project.
 Listed roughly in order of desired completion.
 
 - [ ] Implement subcommands
-  - [ ] list
+  - [x] list
     - [x] show all books
-    - [ ] align vertically
+    - [x] align vertically
   - [ ] add
     - [ ] add by ISBN using Google books
     - [ ] add by Library of Congress number?
