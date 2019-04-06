@@ -1,7 +1,7 @@
 extern crate rusqlite;
 extern crate xdg;
 
-use crate::book::{Book, BookID, BookIdentifier};
+use crate::book::Book;
 use rusqlite::{Connection, Result, NO_PARAMS};
 use std::path::PathBuf;
 use xdg::BaseDirectories;
@@ -30,7 +30,7 @@ impl BookConnection {
     }
 
     fn establish_connection(path: Option<PathBuf>) -> Result<BookConnection> {
-        let xdg_dirs = xdg::BaseDirectories::with_prefix("bookthing").unwrap();
+        let xdg_dirs = BaseDirectories::with_prefix("bookthing").unwrap();
 
         let database_path = match path {
             Some(p) => p,
@@ -102,10 +102,10 @@ impl BookConnection {
             BookOrder::Copies => "copies DESC, title ASC",
         };
 
-        let mut statement = self.connection.prepare(&format!("{}{}",
+        let mut statement = self.connection.prepare(&format!(
             r#"SELECT id, title, author, bookid, idtype, secondary_authors, publication_year, publisher, copies
                FROM books
-               ORDER BY "#, sort))
+               ORDER BY {}"#, sort))
             .expect("Failure in reading database.");
 
         let rows = statement.query_map(NO_PARAMS, |row| {
@@ -114,7 +114,10 @@ impl BookConnection {
                 title: row.get(1).unwrap(),
                 author: row.get(2).unwrap(),
                 bookid: row.get(3).unwrap(),
-                secondary_authors: Some(Vec::new()), // TODO: fix
+                secondary_authors: match row.get::<_, String>(5) {
+                    Ok(a) => Some(a.split(';').map(ToString::to_string).collect()),
+                    Err(_) => None,
+                },
                 publication_year: row.get(6).unwrap(),
                 publisher: row.get(7).unwrap(),
                 copies: row.get(8).unwrap(),

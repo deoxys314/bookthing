@@ -1,16 +1,67 @@
 extern crate ansi_term;
 extern crate clap;
+extern crate reqwest;
 extern crate rusqlite;
+extern crate serde_json;
 extern crate tabwriter;
 
 use ansi_term::Style;
 use booklib::database;
-use rusqlite::Result;
+use serde_json::Value;
 use std::io::{self, Write};
 use tabwriter::TabWriter;
 
-pub fn list(matches: &clap::ArgMatches) -> Result<()> {
+#[derive(Debug)]
+pub enum SubCommandError {
+    ReqwestError(reqwest::Error),
+    RusqliteError(rusqlite::Error),
+    SerdeError(serde_json::Error),
+}
 
+impl From<serde_json::Error> for SubCommandError {
+    fn from(error: serde_json::Error) -> Self {
+        SubCommandError::SerdeError(error)
+    }
+}
+
+impl From<reqwest::Error> for SubCommandError {
+    fn from(error: reqwest::Error) -> Self {
+        SubCommandError::ReqwestError(error)
+    }
+}
+
+impl From<rusqlite::Error> for SubCommandError {
+    fn from(error: rusqlite::Error) -> Self {
+        SubCommandError::RusqliteError(error)
+    }
+}
+
+impl From<SubCommandError> for usize {
+    fn from(error: SubCommandError) -> Self {
+        100 + match error {
+            SubCommandError::ReqwestError(_) => 1,
+            SubCommandError::RusqliteError(_) => 2,
+            SubCommandError::SerdeError(_) => 3,
+        }
+    }
+}
+
+pub fn add(matches: &clap::ArgMatches) -> Result<(), SubCommandError> {
+    // TODO: feed in crap data, see what happens
+    let googleurl = format!(
+        "https://www.googleapis.com/books/v1/volumes?q=isbn:{}",
+        matches.value_of("id").unwrap()
+    );
+
+    let result = reqwest::get(&googleurl)?.text()?;
+
+    let v: Value = serde_json::from_str(&result)?;
+
+    println!("{:?}", v);
+    Ok(())
+}
+
+pub fn list(matches: &clap::ArgMatches) -> Result<(), SubCommandError> {
     let order = if matches.is_present("id") {
         database::BookOrder::Id
     } else if matches.is_present("isbn") {
@@ -50,8 +101,8 @@ pub fn list(matches: &clap::ArgMatches) -> Result<()> {
             "{}\t{}\t{}\t{}",
             book.id,
             Style::new().underline().paint(book.title),
-            book.author.unwrap_or("[Author Unknown]".to_string()),
-            book.bookid.unwrap_or("[no bookid]".to_string())
+            book.author.unwrap_or_else(|| "[Author Unknown]".to_string()),
+            book.bookid.unwrap_or_else(|| "[no bookid]".to_string())
         ).unwrap();
         // print each book here
         if matches.is_present("complete") {
@@ -68,7 +119,7 @@ pub fn list(matches: &clap::ArgMatches) -> Result<()> {
                 },
                 completebook
                     .publisher
-                    .unwrap_or("[publisher unknown]".to_string()),
+                    .unwrap_or_else(|| "[publisher unknown]".to_string()),
                 completebook.copies.unwrap_or(1)
             ).unwrap();
         }

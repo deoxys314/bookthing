@@ -1,11 +1,13 @@
 #[macro_use]
 extern crate clap;
 
-use clap::{Arg, App, SubCommand, ArgGroup};
+use clap::{App, Arg, ArgGroup, SubCommand};
 
 mod subcommands;
 
-fn main() -> Result<(), usize> {
+use subcommands::SubCommandError;
+
+fn main() -> Result<(), SubCommandError> {
     let matches = App::new("bookthing")
         .version(crate_version!())
         .author("Cameron Rossington <cameron.rossington@gmail.com>")
@@ -118,14 +120,11 @@ fn main() -> Result<(), usize> {
 
         .get_matches();
 
-
     // once we have gotten here, clap has already validated arguments
 
     match matches.subcommand() {
-        ("list", Some(m)) => match subcommands::list(m) {
-            Ok(()) => Ok(()),
-            Err(_) => Err(1)
-        },
+        ("list", Some(m)) => subcommands::list(m),
+        ("add", Some(i)) => subcommands::add(i),
         _ => {
             println!("You have entered a valid subcommand, but which hasn't been implemented yet.");
             Ok(())

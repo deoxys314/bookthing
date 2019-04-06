@@ -50,4 +50,11 @@ impl Book {
     //
     // from_parts(author: Option<&'static str> . . .
     //   this one is not going to be used, probably, but it's good to have
+
+    pub fn secondary_authors(&self) -> Option<String> {
+        match &self.secondary_authors {
+            Some(authors) => Some(authors.join(", ")),
+            None => None,
+        }
+    }
 }
